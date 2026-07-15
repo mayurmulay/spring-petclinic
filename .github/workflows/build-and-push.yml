@@ -15,6 +15,7 @@ env:
 
 jobs:
   build:
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
 
     steps:
@@ -24,25 +25,20 @@ jobs:
       - name: Print GitHub Context
         run: |
           echo "Repository=${{ github.repository }}"
-          echo "Branch=${{ github.ref }}"
+          echo "Ref=${{ github.ref }}"
+          echo "Workflow=${{ github.workflow }}"
+          echo "Workflow Ref=${{ github.workflow_ref }}"
           echo "Event=${{ github.event_name }}"
           echo "Actor=${{ github.actor }}"
-- name: Show GitHub Context
-  run: |
-    echo "Repository: ${{ github.repository }}"
-    echo "Ref: ${{ github.ref }}"
-    echo "Workflow Ref: ${{ github.workflow_ref }}"
-    echo "Event: ${{ github.event_name }}"
-    
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Verify AWS Identity
-        run: |
-          aws sts get-caller-identity
+        run: aws sts get-caller-identity
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -60,24 +56,23 @@ jobs:
           chmod +x mvnw
           ./mvnw clean package -DskipTests
 
-      - name: Build Docker image
+      - name: Build Docker Image
         run: |
           docker build \
-            -t $ECR_REPOSITORY:${{ github.sha }} \
-            .
+            -t $ECR_REPOSITORY:${{ github.sha }} .
 
-      - name: Tag Docker image
+      - name: Tag Docker Image
         run: |
           docker tag \
             $ECR_REPOSITORY:${{ github.sha }} \
             ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}
 
-      - name: Push Docker image
+      - name: Push Docker Image
         run: |
           docker push \
             ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}
 
-      - name: Print image URI
+      - name: Print Image URI
         run: |
-          echo "Image:"
+          echo "Image URI:"
           echo "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}"
