@@ -12,57 +12,38 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class BeanStartupProfiler
-        implements InstantiationAwareBeanPostProcessor,
-                   SmartInitializingSingleton {
+public class BeanStartupProfiler implements InstantiationAwareBeanPostProcessor, SmartInitializingSingleton {
 
-    private static final Logger log =
-            LoggerFactory.getLogger(BeanStartupProfiler.class);
+    private static final Logger log = LoggerFactory.getLogger(BeanStartupProfiler.class);
 
     private final Map<String, Long> startTimes = new ConcurrentHashMap<>();
     private final Map<String, Long> durations = new ConcurrentHashMap<>();
 
     @Override
-    public Object postProcessBeforeInstantiation(Class<?> beanClass,
-                                                 String beanName)
-            throws BeansException {
-
+    public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) throws BeansException {
         startTimes.put(beanName, System.nanoTime());
         return null;
     }
 
     @Override
-    public Object postProcessAfterInitialization(Object bean,
-                                                 String beanName)
-            throws BeansException {
-
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         Long start = startTimes.remove(beanName);
-
         if (start != null) {
-            long elapsed =
-                    (System.nanoTime() - start) / 1_000_000;
-
+            long elapsed = (System.nanoTime() - start) / 1_000_000;
             durations.put(beanName, elapsed);
         }
-
         return bean;
     }
 
     @Override
     public void afterSingletonsInstantiated() {
-
         log.info("");
         log.info("============== Bean Startup Report ==============");
 
-        durations.entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByValue(
-                        Comparator.reverseOrder()))
+        durations.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                 .limit(20)
-                .forEach(e ->
-                        log.info("{:<45} {} ms",
-                                e.getKey(),
-                                e.getValue()));
+                .forEach(e -> log.info(String.format("%-45s %d ms", e.getKey(), e.getValue())));
 
         log.info("=================================================");
     }
