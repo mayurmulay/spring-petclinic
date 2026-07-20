@@ -1,15 +1,15 @@
 package org.springframework.samples.petclinic.profiler;
 
+import java.util.Comparator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
 import org.springframework.stereotype.Component;
-
-import java.util.Comparator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class BeanStartupProfiler implements InstantiationAwareBeanPostProcessor, SmartInitializingSingleton {
@@ -37,7 +37,6 @@ public class BeanStartupProfiler implements InstantiationAwareBeanPostProcessor,
 
     @Override
     public void afterSingletonsInstantiated() {
-        log.info("");
         log.info("============== Bean Startup Report ==============");
 
         durations.entrySet().stream()
